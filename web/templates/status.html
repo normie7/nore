@@ -1,0 +1,45 @@
+{{define "title"}}
+    Noise Remover Beta - Download file
+{{end}}
+
+{{define "content"}}
+    <section class="testimonials text-center">
+        <div class="container">
+
+            {{if ne .D.FileId ""}}
+                {{ if eq .D.Progress .D.ProgressCompleted }}
+                    <div class="row">
+                    <h3 class="mx-auto mb-5">Download file <a href="/download/{{ .D.FileId }}">{{ .D.UploadedName }}</a></h3>
+                    </div>
+                {{ else if eq .D.Progress .D.ProgressErrorEncountered }}
+                    <div class="row">
+                    <h3 class="mx-auto mb-5">Checking file {{ .D.UploadedName }}</h3>
+                    <p>Error occurred while processing the file</p>
+                    </div>
+                {{ else }}
+
+                    <div class="row">
+                    <h3 class="mx-auto mb-5">Processing file {{ .D.UploadedName }}</h3>
+                    </div>
+
+                    <div class="row">
+                        <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="margin: auto; display: block;" width="200px" height="200px" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid">
+                            <circle cx="50" cy="50" r="32" stroke-width="8" stroke="#007bff" stroke-dasharray="50.26548245743669 50.26548245743669" fill="none" stroke-linecap="round" transform="rotate(215.611 50 50)">
+                                <animateTransform attributeName="transform" type="rotate" dur="1s" repeatCount="indefinite" keyTimes="0;1" values="0 50 50;360 50 50"></animateTransform>
+                            </circle>
+                            <circle cx="50" cy="50" r="23" stroke-width="8" stroke="#bbcedd" stroke-dasharray="36.12831551628262 36.12831551628262" stroke-dashoffset="36.12831551628262" fill="none" stroke-linecap="round" transform="rotate(-215.611 50 50)">
+                                <animateTransform attributeName="transform" type="rotate" dur="1s" repeatCount="indefinite" keyTimes="0;1" values="0 50 50;-360 50 50"></animateTransform>
+                            </circle>
+                        </svg>
+                    </div>
+                    <!-- todo ajax -->
+                    <script>setTimeout(function(){location.reload()}, 3500);</script>
+                {{ end }}
+                </div>
+            {{ else }}
+                <h3 class="mb-5">File Not Found</h3>
+            {{ end }}
+
+        </div>
+    </section>
+{{end}}

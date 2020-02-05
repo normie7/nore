@@ -1,0 +1,15 @@
+mysql:
+  user: "root"
+  password: "example"
+  host: "127.0.0.1"
+  port: "3306"
+  dbname: "demo"
+
+#folder with assets and templates
+webdir: "/projects/nore/web"
+
+#Global site tag (gtag.js) - Google Analytics
+gst: ""
+
+#application port
+port: "8080"
