@@ -1,6 +1,6 @@
 module github.com/normie7/nore
 
-go 1.13
+go 1.14
 
 require (
 	github.com/faiface/beep v1.0.2

@@ -2,6 +2,7 @@ package noiseremover
 
 import (
 	"bufio"
+	"context"
 	"log"
 	"math/rand"
 	"sync"
@@ -18,9 +19,11 @@ type result struct {
 	err    error
 }
 
-func (b *backgroundService) ProcessTicker(duration time.Duration, timeToStop chan bool, wg *sync.WaitGroup) {
+func (b *backgroundService) ProcessTicker(ctx context.Context, wg *sync.WaitGroup, duration time.Duration) {
 	defer func() {
-		wg.Done()
+		if wg != nil {
+			wg.Done()
+		}
 		log.Println("backgroundService.ProcessTicker done")
 	}()
 
@@ -48,7 +51,7 @@ func (b *backgroundService) ProcessTicker(duration time.Duration, timeToStop cha
 
 	results := make(chan result, numWorkers+cap(jobs))
 	for w := 1; w <= numWorkers; w++ {
-		go b.processFileWorker(w, jobs, results, timeToStop, &pwg)
+		go b.processFileWorker(ctx, &pwg, w, jobs, results)
 		pwg.Add(1)
 	}
 
@@ -61,7 +64,7 @@ func (b *backgroundService) ProcessTicker(duration time.Duration, timeToStop cha
 			addJobs(jobs)
 		case <-ticker.C:
 			addJobs(jobs)
-		case <-timeToStop:
+		case <-ctx.Done():
 			// dequeue all the jobs
 			close(jobs)
 			for j := range jobs {
@@ -82,9 +85,13 @@ func (b *backgroundService) ProcessTicker(duration time.Duration, timeToStop cha
 	}
 }
 
-func (b *backgroundService) processFileWorker(id int, files <-chan File, results chan<- result, timeToStop <-chan bool, wg *sync.WaitGroup) {
+func (b *backgroundService) processFileWorker(ctx context.Context, wg *sync.WaitGroup, id int, files <-chan File,
+	results chan<- result) {
 	defer func() {
-		wg.Done()
+		if wg != nil {
+			wg.Done()
+		}
+
 		log.Println("worker", id, "stopped")
 	}()
 
@@ -96,16 +103,16 @@ func (b *backgroundService) processFileWorker(id int, files <-chan File, results
 				return
 			}
 			log.Println("worker", id, "started  job", f.Id)
-			err = b.ProcessFile(f)
+			err = b.ProcessFile(ctx, f)
 			log.Println("worker", id, "finished job", f.Id)
 			results <- result{fileId: f.Id, err: err}
-		case <-timeToStop:
+		case <-ctx.Done():
 			return
 		}
 	}
 }
 
-func (b *backgroundService) ProcessFile(file File) error {
+func (b *backgroundService) ProcessFile(ctx context.Context, file File) error {
 
 	err := b.repo.SetProgress(file.Id, ProgressInProgress)
 	if err != nil {

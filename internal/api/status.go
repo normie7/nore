@@ -10,6 +10,7 @@ import (
 func (h *baseHandler) status(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
+	// todo sse
 	s, _ := h.noiseRemover.Status(r.Context(), vars["fileId"])
 
 	lp := filepath.Join(h.templateDir, "layout.html")

@@ -1,13 +1,14 @@
 package noiseremover
 
 import (
+	"context"
 	"sync"
 	"time"
 )
 
 type BackgroundService interface {
-	ProcessTicker(duration time.Duration, timeToStop chan bool, wg *sync.WaitGroup)
-	ProcessFile(file File) error
+	ProcessTicker(ctx context.Context, wg *sync.WaitGroup, duration time.Duration)
+	ProcessFile(ctx context.Context, file File) error
 }
 
 type backgroundService struct {

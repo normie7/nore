@@ -42,7 +42,6 @@ func main() {
 
 	// Handle sigterm and await termChan signal
 	termChan := make(chan os.Signal)
-	timeToStop := make(chan bool)
 	signal.Notify(termChan, syscall.SIGINT, syscall.SIGTERM)
 
 	cfg := parseConfig()
@@ -61,12 +60,13 @@ func main() {
 
 	r := api.NewRouter(s, cfg.WebDir, cfg.GoogleGlobalSiteTag)
 
+	ctx, cancel := context.WithCancel(context.Background())
 	var wg sync.WaitGroup
 	wg.Add(2)
-	go startHttpServer(cfg.Port, r, timeToStop, &wg)
-	go b.ProcessTicker(250*time.Millisecond, timeToStop, &wg)
+	go startHttpServer(ctx, &wg, cfg.Port, r)
+	go b.ProcessTicker(ctx, &wg, 250*time.Millisecond)
 	<-termChan // Blocks here until interrupted
-	close(timeToStop)
+	cancel()
 	wg.Wait()
 	return
 }
@@ -102,17 +102,17 @@ func parseConfig() config {
 	return cfg
 }
 
-func startHttpServer(port string, r http.Handler, timeToStop chan bool, wg *sync.WaitGroup) {
+func startHttpServer(ctx context.Context, wg *sync.WaitGroup, port string, r http.Handler) {
 	server := &http.Server{Addr: ":" + port, Handler: r}
-	go gracefullServerShutdown(server, timeToStop, wg)
+	go gracefullServerShutdown(ctx, wg, server)
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		// todo send os.Signal instead of Fatal
 		log.Fatalf("Could not listen on %s: %v\n", port, err)
 	}
 }
 
-func gracefullServerShutdown(server *http.Server, timeToStop chan bool, wg *sync.WaitGroup) {
-	<-timeToStop
+func gracefullServerShutdown(ctx context.Context, wg *sync.WaitGroup, server *http.Server) {
+	<-ctx.Done()
 	log.Println("Server is shutting down...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
