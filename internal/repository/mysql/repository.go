@@ -1,6 +1,7 @@
 package mysql
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
@@ -33,10 +34,10 @@ type mysqlRepo struct {
 }
 
 // use postgresql update... returning... instead
-func (m *mysqlRepo) QueueFiles(counter int64) ([]noiseremover.File, error) {
+func (m *mysqlRepo) QueueFiles(ctx context.Context, counter int64) ([]noiseremover.File, error) {
 	files := make([]noiseremover.File, 0)
 
-	Tx, err := m.db.Begin()
+	Tx, err := m.db.BeginTx(ctx, nil)
 	if err != nil {
 		return files, err
 	}
@@ -85,19 +86,16 @@ func (m *mysqlRepo) QueueFiles(counter int64) ([]noiseremover.File, error) {
 	return files, nil
 }
 
-func (m *mysqlRepo) SetProgress(fileId string, progress noiseremover.Progress) error {
-	_, err := m.db.Exec("UPDATE files SET progress = ? where id = ?",
-		progress,
-		fileId,
-	)
+func (m *mysqlRepo) SetProgress(ctx context.Context, fileId string, progress noiseremover.Progress) error {
+	_, err := m.db.ExecContext(ctx, "UPDATE files SET progress = ? where id = ?", progress, fileId)
 	return err
 }
 
-func (m *mysqlRepo) GetFilesToProcess() ([]noiseremover.File, error) {
+func (m *mysqlRepo) GetFilesToProcess(ctx context.Context) ([]noiseremover.File, error) {
 
 	q := fmt.Sprintf("SELECT id, internal_name, uploaded_name, progress FROM %s where progress = ?", (&File{}).TableName())
 
-	results, err := m.db.Query(q, noiseremover.ProgressNew)
+	results, err := m.db.QueryContext(ctx, q, noiseremover.ProgressNew)
 	if err != nil {
 		return make([]noiseremover.File, 0), err
 	}
@@ -115,9 +113,9 @@ func (m *mysqlRepo) GetFilesToProcess() ([]noiseremover.File, error) {
 	return files, nil
 }
 
-func (m *mysqlRepo) GetInfo(fileId string) (*noiseremover.File, error) {
+func (m *mysqlRepo) GetInfo(ctx context.Context, fileId string) (*noiseremover.File, error) {
 	f := File{}
-	err := m.db.QueryRow("SELECT id, internal_name, uploaded_name, created_at, progress FROM files where id = ?", fileId).
+	err := m.db.QueryRowContext(ctx, "SELECT id, internal_name, uploaded_name, created_at, progress FROM files where id = ?", fileId).
 		Scan(&f.Id, &f.InternalName, &f.UploadedName, &f.CreatedAt, &f.Progress)
 	if err != nil {
 		return &noiseremover.File{}, err
@@ -131,8 +129,8 @@ func (m *mysqlRepo) GetInfo(fileId string) (*noiseremover.File, error) {
 	}, nil
 }
 
-func (m *mysqlRepo) Add(file *noiseremover.File) error {
-	_, err := m.db.Exec("INSERT INTO files (id, internal_name, uploaded_name, created_at, progress)VALUES ( ?, ?, ?, ?, ? )",
+func (m *mysqlRepo) Add(ctx context.Context, file *noiseremover.File) error {
+	_, err := m.db.ExecContext(ctx, "INSERT INTO files (id, internal_name, uploaded_name, created_at, progress)VALUES ( ?, ?, ?, ?, ? )",
 		file.Id,
 		file.InternalName,
 		file.UploadedName,

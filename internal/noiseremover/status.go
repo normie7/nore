@@ -50,7 +50,7 @@ func (n *noiseRemoverService) Status(ctx context.Context, fileId string) (*Statu
 		return NewStatusData("", "", ""), ErrWrongTokenFormat
 	}
 
-	f, err := n.repo.GetInfo(fileId)
+	f, err := n.repo.GetInfo(ctx, fileId)
 	if err != nil {
 		return NewStatusData("", "", ""), err
 	}
@@ -64,7 +64,7 @@ func (n *noiseRemoverService) Find(ctx context.Context, fileId string) (*Downloa
 		return &DownloadData{}, ErrWrongTokenFormat
 	}
 
-	f, err := n.repo.GetInfo(fileId)
+	f, err := n.repo.GetInfo(ctx, fileId)
 	if err != nil {
 		return &DownloadData{}, err
 	}

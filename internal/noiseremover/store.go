@@ -55,7 +55,7 @@ func (n *noiseRemoverService) Store(ctx context.Context, file multipart.File, he
 		Progress:     ProgressNew,
 	}
 
-	err = n.repo.Add(f)
+	err = n.repo.Add(ctx, f)
 	if err != nil {
 		return nil, err
 	}

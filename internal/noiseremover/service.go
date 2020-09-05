@@ -28,11 +28,11 @@ type Storage interface {
 }
 
 type Repository interface {
-	Add(file *File) error
-	SetProgress(fileId string, progress Progress) error
-	GetInfo(fileId string) (*File, error)
-	GetFilesToProcess() ([]File, error)
-	QueueFiles(counter int64) ([]File, error)
+	Add(ctx context.Context, file *File) error
+	SetProgress(ctx context.Context, fileId string, progress Progress) error
+	GetInfo(ctx context.Context, fileId string) (*File, error)
+	GetFilesToProcess(ctx context.Context) ([]File, error)
+	QueueFiles(ctx context.Context, counter int64) ([]File, error)
 	Close() error
 }
 

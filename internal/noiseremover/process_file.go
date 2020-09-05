@@ -37,7 +37,7 @@ func (b *backgroundService) ProcessTicker(ctx context.Context, wg *sync.WaitGrou
 		if len(jobs) != 0 {
 			return
 		}
-		files, err := b.repo.QueueFiles(numWorkers)
+		files, err := b.repo.QueueFiles(ctx, numWorkers)
 		if err != nil {
 			log.Println("can't get files to process", err)
 			return
@@ -68,7 +68,7 @@ func (b *backgroundService) ProcessTicker(ctx context.Context, wg *sync.WaitGrou
 			// dequeue all the jobs
 			close(jobs)
 			for j := range jobs {
-				err := b.repo.SetProgress(j.Id, ProgressNew)
+				err := b.repo.SetProgress(ctx, j.Id, ProgressNew)
 				if err != nil {
 					results <- result{fileId: j.Id, err: err}
 				}
@@ -114,7 +114,7 @@ func (b *backgroundService) processFileWorker(ctx context.Context, wg *sync.Wait
 
 func (b *backgroundService) ProcessFile(ctx context.Context, file File) error {
 
-	err := b.repo.SetProgress(file.Id, ProgressInProgress)
+	err := b.repo.SetProgress(ctx, file.Id, ProgressInProgress)
 	if err != nil {
 		return err
 	}
@@ -123,9 +123,9 @@ func (b *backgroundService) ProcessFile(ctx context.Context, file File) error {
 	defer func() {
 		if err == nil {
 			// setting error from nil to this
-			err = b.repo.SetProgress(file.Id, ProgressCompleted)
+			err = b.repo.SetProgress(ctx, file.Id, ProgressCompleted)
 		} else {
-			_ = b.repo.SetProgress(file.Id, ProgressErrorEncountered)
+			_ = b.repo.SetProgress(ctx, file.Id, ProgressErrorEncountered)
 		}
 	}()
 
